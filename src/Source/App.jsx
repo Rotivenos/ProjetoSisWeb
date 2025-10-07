@@ -1,15 +1,23 @@
-import React from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
-import Home from './pages/Home'
-import Explore from './pages/Explore'
-import CreateMemory from './pages/CreateMemory'
-import Album from './pages/Album'
-import Login from './pages/Login'
-import { useAuth } from './services/auth'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Home from './Pages/Home';
+import Explore from './Pages/Explore';
+import CreateMemory from './Pages/CreateMemory';
+import Album from './Pages/Album';
+import Login from './Pages/Login';
 
-export default function App(){
-  const { user, signOut } = useAuth()
-
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/create" element={<CreateMemory />} />
+        <Route path="/album/:id" element={<Album />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -42,4 +50,3 @@ export default function App(){
       <footer className="text-center py-6 text-sm text-slate-500">© {new Date().getFullYear()} Memories</footer>
     </div>
   )
-}

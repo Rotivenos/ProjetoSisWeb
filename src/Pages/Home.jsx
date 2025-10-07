@@ -9,7 +9,7 @@ export default function Home(){
   return (
     <div>
       <h1 className="text-2xl font-semibold mb-4">Descubra memórias</h1>
-      {loading && memories.length===0 ? <p>Carregando...</p> : (
+      (loading && memories.length===0 ? <p>Carregando...</p> : 
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {memories.map(m => (
@@ -24,7 +24,7 @@ export default function Home(){
             </div>
           )}
         </>
-      )}
+      )
     </div>
   )
 }

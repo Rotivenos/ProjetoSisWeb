@@ -1,5 +1,5 @@
 {
-  "name": "projetosisweb-1",
+  "name": "projetosisweb",
   "version": "1.0.0",
   "description": "Aplicação React para gerenciamento de memórias",
   "main": "index.js",
@@ -9,38 +9,13 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "keywords": [
-    "react",
-    "memórias",
-    "frontend",
-    "SPA"
-  ],
+  "keywords": [],
   "author": "Henrique",
   "license": "ISC",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.30.1",
+    "react-router-dom": "^6.22.1",
     "react-scripts": "^5.0.1"
-  },
-  "homepage": "https://github.com/rotivenos/projetosisweb-1#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/rotivenos/projetosisweb-1.git"
-  },
-  "bugs": {
-    "url": "https://github.com/rotivenos/projetosisweb-1/issues"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }
