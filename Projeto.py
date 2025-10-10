@@ -198,7 +198,40 @@ def handler_send_request(event, context=None):
     }
     send_sqs_message(SQS_REQUEST_QUEUE, msg)
     return {"statusCode": 200, "body": {"result": "queued"}}
-
+def handler_get_memories(event, context=None):
+    """Handler para listar memórias"""
+    params = event.get("queryStringParameters", {}) or {}
+    user_id = params.get("user_id", "user123")
+    
+    try:
+        table = dynamodb.Table(DDB_TABLE)
+        response = table.query(
+            IndexName='user-index',
+            KeyConditionExpression='user_id = :uid',
+            ExpressionAttributeValues={':uid': user_id},
+            ScanIndexForward=False,
+            Limit=20
+        )
+        
+        memories = response.get('Items', [])
+        
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({"memories": memories, "count": len(memories)})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*"
+            },
+            "body": json.dumps({"error": str(e)})
+        }
 # Example local testing entrypoint
 if __name__ == "__main__":
     # Simulate upload (local)

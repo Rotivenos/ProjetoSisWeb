@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Image, Video, FileText, MapPin, Tag, Send, Heart, MessageCircle, User, Plus, Search, X } from 'lucide-react';
 
-const API_URL = 'https://pl65pxj6t3sc3fw7bwzdcjth7u0nykbe.lambda-url.sa-east-1.on.aws';
+const API_URL = 'https://pl65pxj6t3sc3fw7bwzdcjth7u0nykbe.lambda-url.sa-east-1.on.aws/';
 
 const MemoriesApp = () => {
   const [view, setView] = useState('feed');
@@ -18,25 +18,6 @@ const MemoriesApp = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Carregar memórias ao iniciar
-  React.useEffect(() => {
-    loadMemories();
-  }, []);
-
-  const loadMemories = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/memories?user_id=user123`);
-      if (response.ok) {
-        const data = await response.json();
-        setMemories(data.memories || []);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar memórias:', error);
-    }
-    setLoading(false);
-  };
-
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -47,6 +28,7 @@ const MemoriesApp = () => {
       };
       reader.readAsDataURL(file);
       
+      // Detectar tipo de mídia
       if (file.type.startsWith('image/')) {
         setUploadForm(prev => ({ ...prev, media_type: 'image' }));
       } else if (file.type.startsWith('video/')) {
@@ -61,6 +43,7 @@ const MemoriesApp = () => {
       return;
     }
 
+    // Converter arquivo para base64
     let file_bytes_base64 = null;
     if (selectedFile) {
       const reader = new FileReader();
@@ -79,54 +62,58 @@ const MemoriesApp = () => {
         };
 
         try {
-          const response = await fetch(`${API_URL}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
+  // Chamada real para sua API AWS
+  const response = await fetch(`${API_URL}/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
 
-          if (!response.ok) {
-            throw new Error('Erro no upload');
-          }
+  if (!response.ok) {
+    throw new Error('Erro no upload');
+  }
 
-          const result = await response.json();
-          
-          const newMemory = {
-            memory_id: result.memory_id || result.body?.memory_id,
-            user_id: payload.user_id,
-            media_type: payload.media_type,
-            theme: payload.theme,
-            location: payload.location,
-            description: payload.description,
-            created_at: Date.now(),
-            likes: 0,
-            comments: [],
-            status: 'UPLOADED',
-            tags: [],
-            preview: previewUrl
-          };
-          
-          setMemories(prev => [newMemory, ...prev]);
-          setView('feed');
-          
-          setUploadForm({
-            media_type: 'image',
-            theme: '',
-            location: '',
-            description: '',
-            file: null
-          });
-          setSelectedFile(null);
-          setPreviewUrl(null);
-          
-          alert('Memória enviada com sucesso!');
-        } catch (error) {
-          console.error('Erro ao enviar:', error);
-          alert('Erro ao enviar memória: ' + error.message);
-        }
+  const result = await response.json();
+  
+  // Adicionar a nova memória localmente
+  const newMemory = {
+    memory_id: result.memory_id,
+    user_id: payload.user_id,
+    media_type: payload.media_type,
+    theme: payload.theme,
+    location: payload.location,
+    description: payload.description,
+    created_at: Date.now(),
+    likes: 0,
+    comments: [],
+    status: 'UPLOADED',
+    tags: [],
+    preview: previewUrl
+  };
+  
+  setMemories(prev => [newMemory, ...prev]);
+  setView('feed');
+  
+  // Limpar formulário
+  setUploadForm({
+    media_type: 'image',
+    theme: '',
+    location: '',
+    description: '',
+    file: null
+  });
+  setSelectedFile(null);
+  setPreviewUrl(null);
+  
+  alert('Memória enviada com sucesso!');
+} catch (error) {
+  console.error('Erro ao enviar:', error);
+  alert('Erro ao enviar memória: ' + error.message);
+}
       };
       reader.readAsDataURL(selectedFile);
     } else {
+      // Upload apenas texto
       const payload = {
         user_id: 'user123',
         media_type: 'text',
@@ -134,46 +121,29 @@ const MemoriesApp = () => {
         location: uploadForm.location || '',
         description: uploadForm.description || '',
       };
-
-      try {
-        const response = await fetch(`${API_URL}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          throw new Error('Erro no upload');
-        }
-
-        const result = await response.json();
       
-        const newMemory = {
-          memory_id: result.memory_id || result.body?.memory_id,
-          ...payload,
-          created_at: Date.now(),
-          likes: 0,
-          comments: [],
-          status: 'UPLOADED',
-          tags: []
-        };
-        
-        setMemories(prev => [newMemory, ...prev]);
-        setView('feed');
-        
-        setUploadForm({
-          media_type: 'image',
-          theme: '',
-          location: '',
-          description: '',
-          file: null
-        });
-        
-        alert('Memória enviada com sucesso!');
-      } catch (error) {
-        console.error('Erro ao enviar:', error);
-        alert('Erro ao enviar memória: ' + error.message);
-      }
+      const newMemory = {
+        memory_id: `memory-${Date.now()}`,
+        ...payload,
+        created_at: Date.now(),
+        likes: 0,
+        comments: [],
+        status: 'UPLOADED',
+        tags: []
+      };
+      
+      setMemories(prev => [newMemory, ...prev]);
+      setView('feed');
+      
+      setUploadForm({
+        media_type: 'image',
+        theme: '',
+        location: '',
+        description: '',
+        file: null
+      });
+      
+      alert('Memória enviada com sucesso!');
     }
   };
 
@@ -199,6 +169,7 @@ const MemoriesApp = () => {
 
   const MemoryCard = ({ memory }) => (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6 hover:shadow-xl transition-shadow">
+      {/* Header */}
       <div className="p-4 flex items-center justify-between border-b">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
@@ -217,6 +188,7 @@ const MemoriesApp = () => {
         )}
       </div>
 
+      {/* Media */}
       {memory.media_type === 'image' && (
         <div className="bg-gray-100">
           {memory.preview ? (
@@ -235,6 +207,7 @@ const MemoriesApp = () => {
         </div>
       )}
 
+      {/* Content */}
       <div className="p-4">
         {memory.theme && (
           <div className="flex items-center gap-2 mb-2">
@@ -257,6 +230,7 @@ const MemoriesApp = () => {
           </div>
         )}
 
+        {/* Actions */}
         <div className="flex items-center gap-6 pt-3 border-t">
           <button 
             onClick={() => handleLike(memory.memory_id)}
@@ -279,6 +253,7 @@ const MemoriesApp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* Header */}
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -304,13 +279,7 @@ const MemoriesApp = () => {
         {view === 'feed' && (
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Suas Memórias</h2>
-            
-            {loading ? (
-              <div className="text-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-                <p className="text-gray-500 mt-4">Carregando memórias...</p>
-              </div>
-            ) : memories.length === 0 ? (
+            {memories.length === 0 ? (
               <div className="text-center py-16">
                 <Image className="w-24 h-24 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 text-lg">Nenhuma memória ainda</p>
@@ -333,6 +302,7 @@ const MemoriesApp = () => {
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Nova Memória</h2>
             
+            {/* Tipo de mídia */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tipo de Memória
@@ -357,6 +327,7 @@ const MemoriesApp = () => {
               </div>
             </div>
 
+            {/* Upload de arquivo */}
             {uploadForm.media_type !== 'text' && (
               <div className="mb-6">
                 <input
@@ -397,6 +368,7 @@ const MemoriesApp = () => {
               </div>
             )}
 
+            {/* Tema */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tema
@@ -410,6 +382,7 @@ const MemoriesApp = () => {
               />
             </div>
 
+            {/* Localização */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Localização
@@ -426,6 +399,7 @@ const MemoriesApp = () => {
               </div>
             </div>
 
+            {/* Descrição */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Descrição
@@ -439,6 +413,7 @@ const MemoriesApp = () => {
               />
             </div>
 
+            {/* Botões */}
             <div className="flex gap-3">
               <button
                 onClick={() => setView('feed')}

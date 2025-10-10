@@ -1,0 +1,142 @@
+service: memories-app
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  stage: dev
+  
+  environment:
+    APP_ENV: dev
+    S3_BUCKET: memories-dev-media
+    DDB_TABLE: memories-dev-metadata
+    SQS_UPLOAD_QUEUE: memories-dev-upload-queue
+    SQS_REQUEST_QUEUE: memories-dev-request-queue
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:*
+          Resource:
+            - arn:aws:s3:::memories-dev-media/*
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource:
+            - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/memories-dev-metadata
+            - arn:aws:dynamodb:${aws:region}:${aws:accountId}:table/memories-dev-metadata/index/*
+        - Effect: Allow
+          Action:
+            - sqs:*
+          Resource:
+            - arn:aws:sqs:${aws:region}:${aws:accountId}:memories-dev-*
+        - Effect: Allow
+          Action:
+            - rekognition:*
+          Resource: "*"
+
+  httpApi:
+    cors: true
+
+functions:
+  upload:
+    handler: Projeto.handler_upload
+    events:
+      - httpApi:
+          path: /upload
+          method: post
+    timeout: 30
+
+  getMemories:
+    handler: Projeto.handler_get_memories
+    events:
+      - httpApi:
+          path: /memories
+          method: get
+    timeout: 30
+
+  sendRequest:
+    handler: Projeto.handler_send_request
+    events:
+      - httpApi:
+          path: /request
+          method: post
+    timeout: 30
+
+  sqsProcessor:
+    handler: Projeto.handler_sqs_processor
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - UploadQueue
+              - Arn
+          batchSize: 10
+    timeout: 300
+
+resources:
+  Resources:
+    MediaBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: memories-dev-media
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+              AllowedHeaders:
+                - "*"
+
+    MetadataTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: memories-dev-metadata
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: memory_id
+            AttributeType: S
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: created_at
+            AttributeType: N
+        KeySchema:
+          - AttributeName: memory_id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: user-index
+            KeySchema:
+              - AttributeName: user_id
+                KeyType: HASH
+              - AttributeName: created_at
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+
+    UploadQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: memories-dev-upload-queue
+        VisibilityTimeout: 300
+
+    RequestQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: memories-dev-request-queue
+        VisibilityTimeout: 300
+
+    StorageQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: memories-dev-storage-queue
+        VisibilityTimeout: 300
+
+  Outputs:
+    ApiUrl:
+      Value:
+        Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
