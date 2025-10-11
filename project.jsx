@@ -43,7 +43,6 @@ const MemoriesApp = () => {
       return;
     }
 
-    // Converter arquivo para base64
     let file_bytes_base64 = null;
     if (selectedFile) {
       const reader = new FileReader();
@@ -62,7 +61,7 @@ const MemoriesApp = () => {
         };
 
         try {
-  // Chamada real para sua API AWS
+  
   const response = await fetch(`${API_URL}/upload`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -94,7 +93,7 @@ const MemoriesApp = () => {
   setMemories(prev => [newMemory, ...prev]);
   setView('feed');
   
-  // Limpar formulário
+  
   setUploadForm({
     media_type: 'image',
     theme: '',
@@ -113,7 +112,7 @@ const MemoriesApp = () => {
       };
       reader.readAsDataURL(selectedFile);
     } else {
-      // Upload apenas texto
+      
       const payload = {
         user_id: 'user123',
         media_type: 'text',
